@@ -1,0 +1,8 @@
+#!/bin/bash
+
+PML_PATH=$1
+spin -a $PML_PATH
+gcc -Wno-format-overflow pan.c
+./a.out
+
+rm -f a.out pan.*
