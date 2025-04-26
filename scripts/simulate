@@ -1,0 +1,5 @@
+#!/bin/bash
+
+PML_PATH=$1
+DEPTH=${2:-100}
+spin -u${DEPTH} $PML_PATH

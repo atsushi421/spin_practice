@@ -1,0 +1,7 @@
+#!/bin/bash
+
+PML_PATH=$1
+DIR_PATH=$(dirname $PML_PATH)
+BASE_NAME=$(basename $PML_PATH)
+mv ${BASE_NAME}.trail ${DIR_PATH}/
+spin -t -g $PML_PATH

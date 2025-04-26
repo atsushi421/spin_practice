@@ -1,8 +1,15 @@
 #!/bin/bash
 
 PML_PATH=$1
+PROGRESS_ANALYSIS=${2:1}
+
 spin -a $PML_PATH
-gcc -Wno-format-overflow -DNP pan.c
-./a.out -l
+if [ $PROGRESS_ANALYSIS -eq 1 ]; then
+    gcc -Wno-format-overflow -DNP pan.c
+    ./a.out -l
+else
+    gcc -Wno-format-overflow pan.c
+    ./a.out
+fi
 
 rm -f a.out pan.*
