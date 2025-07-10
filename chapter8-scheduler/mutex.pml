@@ -1,11 +1,12 @@
-chan toMutex = [0] of { mtype,byte };
+#define NOTASK 255
 byte mutexWait = NOTASK;
 byte mutexOwner = NOTASK;
-mtype stateMutex = S0;
+mtype:Status stateMutex = S0;
 
-proctype Mutex ()
+proctype Mutex()
 {
-	mtype M;byte I;
+	mtype:MutexStatus M;byte I;
+
 	do
 	:: atomic { toMutex?M(I) -> 
 			if

@@ -1,93 +1,74 @@
-mtype = { passive,ready,running,blocked };
-mtype = { release,select,yield,wait,notify};
-chan toStateM = [0] of { mtype,short };
+#include "data_structure.pml"
+#include "task_state_transition.pml"
+#include "mutex.pml"
+#include "task_a.pml"
+#include "task_b.pml"
+#include "task_c.pml"
 
-proctype TaskStateTransition() {
-	mtype M;short I;
-	do 
-	:: atomic{toStateM?M,I} -> 
-		if 
-		:: (change[I].state == passive) && (M == release) -> change[I].state = ready;putQ(I)
-		:: (change[I].state == ready) && (M == select) -> change[I].state = running;
-		:: (change[I].state == running) && (M == yield) -> 
-			if 
-			:: (change[I].togo > 0) -> change[I].state = ready;putQ(I)
-			:: else -> change[I].state = passive;
-			fi
-		:: (change[I].state == running) && (M == wait) -> change[I].state = blocked;change[I].togo = change[I].togo + 1;
-		:: (change[I].state == blocked) && (M == notify) -> 
-			if 
-			:: (change[I].togo > 0) -> change[I].state = ready;putQ(I)
-			:: else -> change[I].state = passive;
-			fi
-		:: else -> skip;
+byte tickCount = 0; // byteだと足りないかも
+
+#define NEXTDEADLINE(i) stable[i].peri * change[i].n + stable[i].dead - change[i].togo
+#define NEXTPERIOD(i) stable[i].peri * (change[i].n + 1)
+#define NEWRELEASE(i) stable[i].peri * change[i].n + stable[i].rel
+
+// タスクの時間的な属性値を変更する
+inline updateTask() {
+	byte I;
+	for (I : 0 .. NUM_TASKS - 1) {
+		if
+		:: (tickCount == 0) -> 
+			change[I].n = 0;
+			change[I].togo = stable[I].comp
+		:: else -> skip
+		fi;
+		if
+		:: (NEXTDEADLINE(I) < tickCount) -> 
+			printf(" deadline violation (%d)\\n",I);
+			assert(false)
+		:: else -> skip
+		fi;
+		if
+		:: (NEXTPERIOD(I) == tickCount) -> 
+			change[I].n = change[I].n + 1;
+			change[I].togo = stable[I].comp
+		:: else -> skip
+		fi;
+		if
+		:: (NEWRELEASE(I) == tickCount) -> 
+			toStateM!release,I
+		:: else -> skip
 		fi
-	od
+	}
 }
 
-typedef TimingProperty {
-	byte rel;
-	byte comp;
-	byte dead;
-	byte peri;
-	chan self;
-}
-
-typedef TimingStatus {
-	byte togo;
-	mtype status;
-	byte pri;
-	byte n;
-}
-
-TimingProperty stable[3];
-TimingStatus change[3];
-
-inline updateTask(i) {
-	if
-	:: (tickCount == 0) -> 
-		change[I].n = 0;
-		change[I].togo = stable[I].comp
-	:: else -> skip
-	fi;
-	if
-	:: (NEXTDEADLINE(I) < tickCount) -> 
-		printf(" deadline violation (%d)\\n",I);
-		assert(false)
-	:: else -> skip
-	fi;
-	if
-	:: (NEXTPERIOD(I) == tickCount) -> 
-		change[I].n = change[I].n + 1;
-		change[I].togo = stable[I].comp
-	:: else -> skip
-	fi;
-	if
-	:: (NEWRELEASE(I) == tickCount) -> 
-		toStateM!release,I
-	:: else -> skip
-	fi
-}
-
-inline advanceTick() {
 // 仮想的な時間を進める
+inline advanceTick() {
+	tickCount++;
+	// 実行中タスクにtickを送る。to_schedでdoneが来るまで待つ。
 }
 
-inline selectTask(i) {
 // Ready状態のタスクからRunning状態にするタスクを選択する
+inline selectTask(i) {
+	// readyQ ? _, i; // readyQから優先度の高いタスクを選択
+	true
 }
 
 proctype scheduler(){ 
 	short i;
+
 	do 
 	:: true -> 
-		atomic{updateTask(i)};
+		atomic{updateTask()};
 		selectTask(i);
 		atomic{advanceTick()}
 	od
 }
 
-chan readyQ [3] of { short,short }
-inline putQ(i) {
-	readyQ!!change[i].pri,i
+init {
+	run TaskStateTransition();
+	run Mutex();
+	run TaskA();
+	run TaskB();
+	run TaskC();
+	run scheduler();
 }

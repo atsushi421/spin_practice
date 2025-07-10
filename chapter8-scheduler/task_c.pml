@@ -1,6 +1,6 @@
-mtype = { S0,S1,S2,S3 };
-chan toC = [0] of { mtype };
-mtype stateC = S0;
+
+chan toC = [0] of { mtype:Message };
+mtype:Status stateC = S0;
 
 inline BodyOfTaskC ()
 {
@@ -22,9 +22,9 @@ inline BodyOfTaskC ()
 
 proctype TaskC ()
 {
-	mtype M;
+	mtype:Message M;
+
 	do
     :: atomic{ toC?tick -> BodyOfTaskC();toSched!done }
 	od
 }
-
