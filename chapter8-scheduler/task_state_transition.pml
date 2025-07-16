@@ -3,7 +3,8 @@ inline putQ(i) {
 }
 
 proctype TaskStateTransition() {
-	mtype:TransitionEvent M;short I;
+	mtype:TransitionEvent M;
+	short I;
 
 	do 
 	:: atomic{toStateM?M,I} -> 

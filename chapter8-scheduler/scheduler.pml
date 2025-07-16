@@ -5,62 +5,68 @@
 #include "task_b.pml"
 #include "task_c.pml"
 
-byte tickCount = 0; // byteだと足りないかも
+byte tickCount = 0;
 
 #define NEXTDEADLINE(i) stable[i].peri * change[i].n + stable[i].dead - change[i].togo
 #define NEXTPERIOD(i) stable[i].peri * (change[i].n + 1)
 #define NEWRELEASE(i) stable[i].peri * change[i].n + stable[i].rel
 
-// タスクの時間的な属性値を変更する
 inline updateTask() {
-	byte I;
-	for (I : 0 .. NUM_TASKS - 1) {
+	byte task;
+	for (task : 0 .. NUM_TASKS - 1) {
 		if
 		:: (tickCount == 0) -> 
-			change[I].n = 0;
-			change[I].togo = stable[I].comp
+			change[task].n = 0;
+			change[task].togo = stable[task].comp // WCETで動く前提
 		:: else -> skip
-		fi;
+		fi
+
 		if
-		:: (NEXTDEADLINE(I) < tickCount) -> 
-			printf(" deadline violation (%d)\\n",I);
+		:: (NEXTDEADLINE(task) < tickCount) -> 
+			printf("deadline violation (%d)\n",task);
 			assert(false)
 		:: else -> skip
-		fi;
+		fi
+
 		if
-		:: (NEXTPERIOD(I) == tickCount) -> 
-			change[I].n = change[I].n + 1;
-			change[I].togo = stable[I].comp
+		:: (NEXTPERIOD(task) == tickCount) -> 
+			change[task].n = change[task].n + 1;
+			change[task].togo = stable[task].comp // WCETで動く前提
 		:: else -> skip
-		fi;
+		fi
+
 		if
-		:: (NEWRELEASE(I) == tickCount) -> 
-			toStateM!release,I
+		:: (NEWRELEASE(task) == tickCount) -> 
+			toStateM!release,task
 		:: else -> skip
 		fi
 	}
 }
 
-// 仮想的な時間を進める
-inline advanceTick() {
-	tickCount++;
-	// 実行中タスクにtickを送る。to_schedでdoneが来るまで待つ。
+inline selectTask(ret_task) {
+	readyQ ? _, ret_task;
+	toStateM ! choose, ret_task;
 }
 
-// Ready状態のタスクからRunning状態にするタスクを選択する
-inline selectTask(i) {
-	// readyQ ? _, i; // readyQから優先度の高いタスクを選択
-	true
+inline advanceTick(task) {
+	if
+	:: task == 0 -> toA ! tick
+	:: task == 1 -> toB ! tick
+	:: task == 2 -> toC ! tick
+	fi
+
+	toSched ? done;
+	tickCount++
 }
 
 proctype scheduler(){ 
-	short i;
+	short selected_task;
 
 	do 
 	:: true -> 
 		atomic{updateTask()};
-		selectTask(i);
-		atomic{advanceTick()}
+		selectTask(selected_task);
+		atomic{advanceTick(selected_task)}
 	od
 }
 
