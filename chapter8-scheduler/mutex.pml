@@ -5,29 +5,32 @@ mtype:Status stateMutex = S0;
 
 proctype Mutex()
 {
-	mtype:MutexStatus M;byte I;
+	mtype:MutexEvent mutex_event; byte task;
 
 	do
-	:: atomic { toMutex?M(I) -> 
+	:: atomic { toMutex?mutex_event(task) -> 
 			if
-			:: (stateMutex == S0) -> 
+			:: (stateMutex == S0) -> // Unlocked
 				if
-				:: (M == lock) -> stateMutex = S1;
-					mutexOwner = I;stable[I].self!ack
-				:: else -> stable[I].self!ng
+				:: (mutex_event == lock) -> stateMutex = S1;
+					mutexOwner = task;
+					stable[task].self!ack
+				:: else -> stable[task].self!ng
 				fi
-			:: (stateMutex == S1) -> 
+			:: (stateMutex == S1) -> // Locked
 				if
-				:: ((M == unlock) && (mutexOwner == I)) -> stateMutex = S0;
+				:: ((mutex_event == unlock) && (mutexOwner == task)) -> stateMutex = S0;
 					if
 					:: mutexWait == NOTASK -> skip
 					:: else -> toStateM!notify,mutexWait
-					fi;
-					mutexOwner = NOTASK;mutexWait = NOTASK;
-					stable[I].self!ack
-				:: (M == lock) -> 
-					toStateM!wait,I;mutexWait = I;
-					stable[I].self!ng
+					fi
+					mutexOwner = NOTASK;
+					mutexWait = NOTASK;
+					stable[task].self!ack
+				:: (mutex_event == lock) -> 
+					toStateM!wait,task;
+					mutexWait = task;
+					stable[task].self!ng
 				fi
 			:: else -> assert(false)
 			fi

@@ -1,30 +1,29 @@
-inline putQ(i) {
-	readyQ!!change[i].pri,i
+inline putQ(task) {
+	readyQ!!change[task].pri,task
 }
 
+// タスクの状態遷移はtoStateMチャネル経由でこのプロセスが行う
 proctype TaskStateTransition() {
-	mtype:TransitionEvent M;
-	short I;
+	mtype:TransitionEvent event;
+	short task;
 
 	do 
-	:: atomic{toStateM?M,I} -> 
+	:: atomic{toStateM?event,task} -> 
 		if 
-		:: (change[I].state == passive) && (M == release) -> change[I].state = ready;putQ(I)
-		:: (change[I].state == ready) && (M == choose) -> change[I].state = running;
-		:: (change[I].state == running) && (M == yield) -> 
+		:: (change[task].state == passive) && (event == release) -> change[task].state = ready;putQ(task)
+		:: (change[task].state == ready) && (event == choose) -> change[task].state = running;
+		:: (change[task].state == running) && (event == yield) -> 
 			if 
-			:: (change[I].togo > 0) -> change[I].state = ready;putQ(I)
-			:: else -> change[I].state = passive;
+			:: (change[task].togo > 0) -> change[task].state = ready;putQ(task)
+			:: else -> change[task].state = passive;
 			fi
-		:: (change[I].state == running) && (M == wait) -> change[I].state = blocked;change[I].togo = change[I].togo + 1;
-		:: (change[I].state == blocked) && (M == notify) -> 
+		:: (change[task].state == running) && (event == wait) -> change[task].state = blocked;change[task].togo = change[task].togo + 1;
+		:: (change[task].state == blocked) && (event == notify) -> 
 			if 
-			:: (change[I].togo > 0) -> change[I].state = ready;putQ(I)
-			:: else -> change[I].state = passive;
+			:: (change[task].togo > 0) -> change[task].state = ready;putQ(task)
+			:: else -> change[task].state = passive;
 			fi
 		:: else -> skip;
 		fi
 	od
 }
-
-

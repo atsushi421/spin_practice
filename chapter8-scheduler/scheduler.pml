@@ -5,11 +5,11 @@
 #include "task_b.pml"
 #include "task_c.pml"
 
-byte tickCount = 0;
+#define NEXTDEADLINE(task) stable[task].peri * change[task].n + stable[task].dead - change[task].togo
+#define NEXTPERIOD(task) stable[task].peri * (change[task].n + 1)
+#define NEWRELEASE(task) stable[task].peri * change[task].n + stable[task].rel
 
-#define NEXTDEADLINE(i) stable[i].peri * change[i].n + stable[i].dead - change[i].togo
-#define NEXTPERIOD(i) stable[i].peri * (change[i].n + 1)
-#define NEWRELEASE(i) stable[i].peri * change[i].n + stable[i].rel
+byte tickCount = 0;
 
 inline updateTask() {
 	byte task;
@@ -50,9 +50,9 @@ inline selectTask(ret_task) {
 
 inline advanceTick(task) {
 	if
-	:: task == 0 -> toA ! tick
-	:: task == 1 -> toB ! tick
-	:: task == 2 -> toC ! tick
+	:: task == TASK_A_ID -> toA ! tick
+	:: task == TASK_B_ID -> toB ! tick
+	:: task == TASK_C_ID -> toC ! tick
 	fi
 
 	toSched ? done;

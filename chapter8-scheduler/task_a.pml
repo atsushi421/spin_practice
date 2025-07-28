@@ -1,19 +1,22 @@
-chan toA = [0] of { mtype:Message };
+chan toA = [0] of { mtype:MutexResult };
 mtype:Status stateA = S0;
+#define TASK_A_ID 0
 
 inline BodyOfTaskA ()
 {
+	mtype:MutexResult mutex_result;
+
 	if
 	:: (stateA == S0) -> stateA = S1
-	:: (stateA == S1) -> toMutex!lock(2);toA?M;
+	:: (stateA == S1) -> toMutex!lock(TASK_A_ID);toA?mutex_result;
 		if
-		:: (M == ack) -> stateA = S2
+		:: (mutex_result == ack) -> stateA = S2
 		:: else -> skip
 		fi
 	:: (stateA == S2) -> stateA = S3
-	:: (stateA == S3) -> toMutex!unlock(2);toA?M;
+	:: (stateA == S3) -> toMutex!unlock(TASK_A_ID);toA?mutex_result;
 		if
-		:: (M == ack) -> stateA = S0
+		:: (mutex_result == ack) -> stateA = S0
 		:: else -> skip
 		fi
 	fi
@@ -21,8 +24,6 @@ inline BodyOfTaskA ()
 
 proctype TaskA ()
 {
-	mtype:Message M;
-
 	do
     :: atomic{ toA?tick -> BodyOfTaskA();toSched!done }
 	od
