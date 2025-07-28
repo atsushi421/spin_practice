@@ -1,11 +1,11 @@
 
-chan toC = [0] of { mtype:MutexResult };
+chan toC = [0] of { mtype:SchedulerMutexMessage };
 mtype:Status stateC = S0;
 #define TASK_C_ID 2
 
 inline BodyOfTaskC ()
 {
-	mtype:MutexResult mutex_result;
+	mtype:SchedulerMutexMessage mutex_result;
 
 	if
 	:: (stateC == S0) -> stateC = S1

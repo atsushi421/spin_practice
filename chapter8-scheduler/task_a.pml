@@ -1,10 +1,10 @@
-chan toA = [0] of { mtype:MutexResult };
+chan toA = [0] of { mtype:SchedulerMutexMessage };
 mtype:Status stateA = S0;
 #define TASK_A_ID 0
 
 inline BodyOfTaskA ()
 {
-	mtype:MutexResult mutex_result;
+	mtype:SchedulerMutexMessage mutex_result;
 
 	if
 	:: (stateA == S0) -> stateA = S1

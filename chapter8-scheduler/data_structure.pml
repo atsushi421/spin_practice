@@ -1,8 +1,7 @@
 mtype:TransitionEvent = { release,choose,yield,wait,notify };
 chan toStateM = [0] of { mtype:TransitionEvent,short }; // short: task index. タスクに遷移イベントを送るためのチャネル
 mtype:TaskStatus = { passive,ready,running,blocked };
-mtype:SchedulerEvent = { tick,done };
-mtype:MutexResult = { ack,ng };
+mtype:SchedulerMutexMessage = { tick,done,ack,ng }; // [tick,done]: scheduler events. [ack,ng]: mutex results.
 
 // Static
 typedef TimingProperty {
@@ -10,7 +9,7 @@ typedef TimingProperty {
 	byte comp;// WCET
 	byte dead;// relative deadline
 	byte peri;// period
-	chan self = [0] of { mtype:MutexResult }; // このタスクがMutexのlockをリクエストした結果を受け取るためのチャネル
+	chan self = [0] of { mtype:SchedulerMutexMessage }; // このタスクがMutexのlockをリクエストした結果を受け取るためのチャネル
 }
 
 // Dynamic
@@ -34,7 +33,7 @@ chan toMutex = [0] of { mtype:MutexEvent,byte };
 mtype:Status = { S0,S1,S2,S3 };
 
 
-chan toSched = [0] of { mtype:SchedulerEvent };
+chan toSched = [0] of { mtype:SchedulerMutexMessage };
 
 
 chan readyQ = [NUM_TASKS] of { short,short }// task priority, task index

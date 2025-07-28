@@ -56,6 +56,7 @@ inline advanceTick(task) {
 	fi
 
 	toSched ? done;
+	change[task].togo--;
 	tickCount++
 }
 
