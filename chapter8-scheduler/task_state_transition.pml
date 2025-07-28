@@ -8,7 +8,7 @@ active proctype TaskStateTransition() {
 	short task;
 
 	do 
-	:: atomic{toStateM?event,task} -> 
+	:: atomic{toStateM?event,task -> 
 		if 
 		:: (change[task].state == passive) && (event == release) -> change[task].state = ready;putQ(task)
 		:: (change[task].state == ready) && (event == choose) -> change[task].state = running;
@@ -21,9 +21,10 @@ active proctype TaskStateTransition() {
 		:: (change[task].state == blocked) && (event == notify) -> 
 			if 
 			:: (change[task].togo > 0) -> change[task].state = ready;putQ(task)
-			:: else -> change[task].state = passive;
+			:: else -> assert(false); change[task].state = passive;
 			fi
 		:: else -> skip;
 		fi
+		}
 	od
 }

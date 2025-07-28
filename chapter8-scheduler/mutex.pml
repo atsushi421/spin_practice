@@ -1,4 +1,3 @@
-#define NOTASK 255
 byte mutexWait = NOTASK;
 byte mutexOwner = NOTASK;
 mtype:Status stateMutex = S0;

@@ -43,12 +43,51 @@ inline updateTask() {
 	}
 }
 
+inline getRunningTask(ret_task) {
+	atomic {
+		byte task;
+		for (task : 0 .. NUM_TASKS - 1) {
+			if
+			:: (change[task].state == running) -> ret_task = task; break
+			:: else
+			fi
+		}
+	}
+}
+
 inline selectTask(ret_task) {
-	readyQ ? _, ret_task;
-	toStateM ! choose, ret_task;
+	byte running_task = NOTASK;
+	getRunningTask(running_task);
+
+	if
+	:: atomic{ readyQ ? [_, ret_task] -> readyQ ? <_, ret_task>;}
+	:: else -> ret_task = NOTASK
+	fi
+
+	if
+	:: (ret_task == NOTASK && running_task != NOTASK) ->
+		ret_task = running_task;
+	:: (ret_task != NOTASK && running_task == NOTASK) ->
+		readyQ ? _, ret_task;
+		toStateM ! choose, ret_task;
+	:: else ->
+		if
+		:: (change[ret_task].pri < change[running_task].pri) -> 
+			printf("Preemption occurs: Task %d -> Task %d\n", running_task, ret_task);
+			toStateM ! yield, running_task;
+			readyQ ? _, ret_task;
+			toStateM ! choose, ret_task;
+		:: else -> ret_task = running_task
+		fi
+	fi
 }
 
 inline advanceTick(task) {
+	if
+	:: (task == NOTASK) -> goto advance
+	:: else
+	fi
+
 	if
 	:: task == TASK_A_ID -> toA ! tick
 	:: task == TASK_B_ID -> toB ! tick
@@ -57,18 +96,27 @@ inline advanceTick(task) {
 
 	toSched ? done;
 	change[task].togo--;
+	if
+	:: change[task].togo == 0 -> atomic{printf("%d-th Task %d is completed.\n", change[task].n, task); toStateM ! yield, task}
+	:: else
+	fi
+
+	advance:
 	tickCount++
 }
 
-proctype scheduler(){ 
+proctype scheduler(byte hyper_period){ 
 	short selected_task;
 
 	do 
-	:: true -> 
+	:: tickCount < hyper_period -> 
 		atomic{updateTask()};
 		selectTask(selected_task);
 		atomic{advanceTick(selected_task)}
+	:: else -> break
 	od
+
+	end:
 }
 
 init {
@@ -94,5 +142,5 @@ init {
 	change[TASK_C_ID].pri = 2;
 	run TaskC();
 	
-	run scheduler();
+	run scheduler(24);
 }
