@@ -5,7 +5,7 @@ mtype:Status stateC = S0;
 
 inline BodyOfTaskC ()
 {
-	printf("Processing Task C: n=%d, togo=%d, stateC=%e\n", change[TASK_C_ID].n, change[TASK_C_ID].togo, stateC);
+	printf("Processing Task 2: n=%d, togo=%d, stateC=%e\n", change[TASK_C_ID].n, change[TASK_C_ID].togo, stateC);
 	mtype:MutexResults mutex_result;
 
 	if

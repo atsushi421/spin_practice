@@ -3,7 +3,7 @@ chan toB = [0] of { mtype:SchedulerEvents };
 
 inline BodyOfTaskB ()
 {
-	printf("Processing Task B: n=%d, togo=%d\n", change[TASK_B_ID].n, change[TASK_B_ID].togo);
+	printf("Processing Task 1: n=%d, togo=%d\n", change[TASK_B_ID].n, change[TASK_B_ID].togo);
 	skip;
 }
 

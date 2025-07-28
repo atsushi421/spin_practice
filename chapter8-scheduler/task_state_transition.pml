@@ -17,7 +17,7 @@ active proctype TaskStateTransition() {
 			:: (change[task].togo > 0) -> change[task].state = ready;putQ(task)
 			:: else -> change[task].state = passive;
 			fi
-		:: (change[task].state == running) && (event == wait) -> change[task].state = blocked;change[task].togo = change[task].togo + 1;
+		:: (change[task].state == running) && (event == wait) -> change[task].state = blocked;atomic{printf("Task %d is blocked. togo++\n", task);change[task].togo = change[task].togo + 1;}
 		:: (change[task].state == blocked) && (event == notify) -> 
 			if 
 			:: (change[task].togo > 0) -> change[task].state = ready;putQ(task)
