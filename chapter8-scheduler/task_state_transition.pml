@@ -3,7 +3,7 @@ inline putQ(task) {
 }
 
 // タスクの状態遷移はtoStateMチャネル経由でこのプロセスが行う
-proctype TaskStateTransition() {
+active proctype TaskStateTransition() {
 	mtype:TransitionEvent event;
 	short task;
 

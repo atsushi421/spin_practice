@@ -71,10 +71,27 @@ proctype scheduler(){
 }
 
 init {
-	run TaskStateTransition();
-	run Mutex();
+	// Tasks are prioritized by RM.
+	stable[TASK_A_ID].rel = 0;
+	stable[TASK_A_ID].comp = 1;
+	stable[TASK_A_ID].dead = 6;
+	stable[TASK_A_ID].peri = 6;
+	change[TASK_A_ID].pri = 0;
 	run TaskA();
+
+	stable[TASK_B_ID].rel = 0;
+	stable[TASK_B_ID].comp = 3;
+	stable[TASK_B_ID].dead = 8;
+	stable[TASK_B_ID].peri = 8;
+	change[TASK_B_ID].pri = 1;
 	run TaskB();
+
+	stable[TASK_C_ID].rel = 0;
+	stable[TASK_C_ID].comp = 4;
+	stable[TASK_C_ID].dead = 12;
+	stable[TASK_C_ID].peri = 12;
+	change[TASK_C_ID].pri = 2;
 	run TaskC();
+	
 	run scheduler();
 }

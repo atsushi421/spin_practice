@@ -3,7 +3,7 @@ byte mutexWait = NOTASK;
 byte mutexOwner = NOTASK;
 mtype:Status stateMutex = S0;
 
-proctype Mutex()
+active proctype Mutex()
 {
 	mtype:MutexEvent mutex_event; byte task;
 

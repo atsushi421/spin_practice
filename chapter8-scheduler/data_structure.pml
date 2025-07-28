@@ -16,7 +16,7 @@ typedef TimingProperty {
 // Dynamic
 typedef TimingStatus {
 	byte togo;// residual execution time
-	mtype:TaskStatus state;// task status
+	mtype:TaskStatus state = passive;// task status
 	byte pri;// priority. The lower the value, the higher the priority.
 	byte n;// n-th period
 }
