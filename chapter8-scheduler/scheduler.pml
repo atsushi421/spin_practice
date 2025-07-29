@@ -144,3 +144,7 @@ init {
 	
 	run scheduler(24);
 }
+
+ltl priority_inversion {
+	[](! (change[TASK_A_ID].state == blocked && change[TASK_B_ID].state == running))
+}
