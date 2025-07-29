@@ -1,23 +1,29 @@
-mtype:TransitionEvent = { release,choose,yield,wait,notify };
-chan toStateM = [0] of { mtype:TransitionEvent,short }; // short: task index. タスクに遷移イベントを送るためのチャネル
-mtype:TaskStatus = { passive,ready,running,blocked };
+mtype:TransitionEvents = { release,choose,yield,wait,notify };
+chan toStateM = [0] of { mtype:TransitionEvents,short };// The channel to transition task states. short: task index.
+
 mtype:SchedulerEvents = { tick,done };
+chan toSched = [0] of { mtype:SchedulerEvents };
+
+mtype:MutexEvents = { lock,unlock };
+chan toMutex = [0] of { mtype:MutexEvents,byte };
 mtype:MutexResults = { ack,ng };
+
+mtype:TaskStatus = { passive,ready,running,blocked };
 
 // Static
 typedef TimingProperty {
-	byte rel;// relative release time. 固定値。最悪値？
+	byte rel;// relative release time
 	byte comp;// WCET
 	byte dead;// relative deadline
 	byte peri;// period
-	chan self = [0] of { mtype:MutexResults }; // このタスクがMutexのlockをリクエストした結果を受け取るためのチャネル
+	chan self = [0] of { mtype:MutexResults };// The channel to receive the result of the mutex operation.
 }
 
 // Dynamic
 typedef TimingStatus {
 	byte togo;// residual execution time
 	mtype:TaskStatus state = passive;// task status
-	byte pri;// priority. The lower the value, the higher the priority.
+	byte pri;// priority. The lower the value,the higher the priority.
 	byte n;// n-th period
 }
 
@@ -26,17 +32,8 @@ typedef TimingStatus {
 TimingProperty stable[NUM_TASKS];
 TimingStatus change[NUM_TASKS];
 
+mtype:Status = { S0,S1,S2,S3 };// For tasks and mutex.
 
-mtype:MutexEvent = { lock,unlock };
-chan toMutex = [0] of { mtype:MutexEvent,byte };
-
-
-mtype:Status = { S0,S1,S2,S3 };
-
-
-chan toSched = [0] of { mtype:SchedulerEvents };
-
-
-chan readyQ = [NUM_TASKS] of { short,short }// task priority, task index
+chan readyQ = [NUM_TASKS] of { short,short }// task priority,task index
 
 #define NOTASK 255

@@ -1,24 +1,26 @@
 byte mutexWait = NOTASK;
 byte mutexOwner = NOTASK;
-mtype:Status stateMutex = S0;
+mtype:Status stateMutex = S0;// S0: unlocked,S1: locked
 
 active proctype Mutex()
 {
-	mtype:MutexEvent mutex_event; byte task;
-
+	mtype:MutexEvents mutex_event;byte task;
+	
 	do
 	:: atomic { toMutex?mutex_event(task) -> 
 			if
-			:: (stateMutex == S0) -> // Unlocked
+			:: (stateMutex == S0) -> 
 				if
-				:: (mutex_event == lock) -> stateMutex = S1;
+				:: (mutex_event == lock) -> 
+					stateMutex = S1;
 					mutexOwner = task;
 					stable[task].self!ack
-				:: else -> stable[task].self!ng
+				:: else -> assert(false);stable[task].self!ng
 				fi
-			:: (stateMutex == S1) -> // Locked
+			:: (stateMutex == S1) -> 
 				if
-				:: ((mutex_event == unlock) && (mutexOwner == task)) -> stateMutex = S0;
+				:: ((mutex_event == unlock) && (mutexOwner == task)) -> 
+					stateMutex = S0;
 					if
 					:: mutexWait == NOTASK -> skip
 					:: else -> toStateM!notify,mutexWait

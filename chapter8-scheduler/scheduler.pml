@@ -17,24 +17,24 @@ inline updateTask() {
 		if
 		:: (tickCount == 0) -> 
 			change[task].n = 0;
-			change[task].togo = stable[task].comp // WCETで動く前提
+			change[task].togo = stable[task].comp
 		:: else -> skip
 		fi
-
+		
 		if
 		:: (NEXTDEADLINE(task) < tickCount) -> 
 			printf("deadline violation (%d)\n",task);
 			assert(false)
 		:: else -> skip
 		fi
-
+		
 		if
 		:: (NEXTPERIOD(task) == tickCount) -> 
 			change[task].n = change[task].n + 1;
-			change[task].togo = stable[task].comp // WCETで動く前提
+			change[task].togo = stable[task].comp
 		:: else -> skip
 		fi
-
+		
 		if
 		:: (NEWRELEASE(task) == tickCount) -> 
 			toStateM!release,task
@@ -48,7 +48,7 @@ inline getRunningTask(ret_task) {
 		byte task;
 		for (task : 0 .. NUM_TASKS - 1) {
 			if
-			:: (change[task].state == running) -> ret_task = task; break
+			:: (change[task].state == running) -> assert(ret_task == NOTASK);ret_task = task;
 			:: else
 			fi
 		}
@@ -58,56 +58,56 @@ inline getRunningTask(ret_task) {
 inline selectTask(ret_task) {
 	byte running_task = NOTASK;
 	getRunningTask(running_task);
-
+	
 	if
-	:: atomic{ readyQ ? [_, ret_task] -> readyQ ? <_, ret_task>;}
+	:: atomic{ readyQ?[_,ret_task] -> readyQ?<_,ret_task>;}
 	:: else -> ret_task = NOTASK
 	fi
-
+	
 	if
-	:: (ret_task == NOTASK && running_task != NOTASK) ->
+	:: (ret_task == NOTASK && running_task != NOTASK) -> 
 		ret_task = running_task;
-	:: (ret_task != NOTASK && running_task == NOTASK) ->
-		readyQ ? _, ret_task;
-		toStateM ! choose, ret_task;
-	:: else ->
+	:: (ret_task != NOTASK && running_task == NOTASK) -> 
+		readyQ?_,ret_task;
+		toStateM!choose,ret_task;
+	:: else -> 
 		if
 		:: (change[ret_task].pri < change[running_task].pri) -> 
-			printf("Preemption occurs: Task %d -> Task %d\n", running_task, ret_task);
-			toStateM ! yield, running_task;
-			readyQ ? _, ret_task;
-			toStateM ! choose, ret_task;
+			printf("Preemption occurs: Task %d -> Task %d\n",running_task,ret_task);
+			toStateM!yield,running_task;
+			readyQ?_,ret_task;
+			toStateM!choose,ret_task;
 		:: else -> ret_task = running_task
 		fi
 	fi
 }
 
-inline advanceTick(task) {
+inline advanceTick(selected_task) {
 	if
-	:: (task == NOTASK) -> goto advance
+	:: (selected_task == NOTASK) -> goto advance
 	:: else
 	fi
-
+	
 	if
-	:: task == TASK_A_ID -> toA ! tick
-	:: task == TASK_B_ID -> toB ! tick
-	:: task == TASK_C_ID -> toC ! tick
+	:: selected_task == TASK_A_ID -> toA!tick
+	:: selected_task == TASK_B_ID -> toB!tick
+	:: selected_task == TASK_C_ID -> toC!tick
 	fi
-
-	toSched ? done;
-	change[task].togo--;
+	
+	toSched?done;
+	change[selected_task].togo--;
 	if
-	:: change[task].togo == 0 -> atomic{printf("%d-th Task %d is completed.\n", change[task].n, task); toStateM ! yield, task}
+	:: change[selected_task].togo == 0 -> atomic{printf("%d - th Task %d is completed.\n",change[selected_task].n,selected_task);toStateM!yield,selected_task}
 	:: else
 	fi
-
+	
 	advance:
 	tickCount++
 }
 
 proctype scheduler(byte hyper_period){ 
 	short selected_task;
-
+	
 	do 
 	:: tickCount < hyper_period -> 
 		atomic{updateTask()};
@@ -115,8 +115,6 @@ proctype scheduler(byte hyper_period){
 		atomic{advanceTick(selected_task)}
 	:: else -> break
 	od
-
-	end:
 }
 
 init {
@@ -127,14 +125,14 @@ init {
 	stable[TASK_A_ID].peri = 6;
 	change[TASK_A_ID].pri = 0;
 	run TaskA();
-
+	
 	stable[TASK_B_ID].rel = 0;
 	stable[TASK_B_ID].comp = 3;
 	stable[TASK_B_ID].dead = 8;
 	stable[TASK_B_ID].peri = 8;
 	change[TASK_B_ID].pri = 1;
 	run TaskB();
-
+	
 	stable[TASK_C_ID].rel = 0;
 	stable[TASK_C_ID].comp = 4;
 	stable[TASK_C_ID].dead = 12;
@@ -145,6 +143,6 @@ init {
 	run scheduler(24);
 }
 
-ltl priority_inversion {
-	[](! (change[TASK_A_ID].state == blocked && change[TASK_B_ID].state == running))
+ltl ensure_priority {
+	[](!(change[TASK_A_ID].state == blocked && change[TASK_B_ID].state == running))
 }
