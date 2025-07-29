@@ -11,13 +11,31 @@
 
 byte tickCount = 0;
 
+inline rand_et(task,ret_et) {
+	if
+	:: task == TASK_C_ID -> ret_et = 4;// HACK: Implementation constraints
+	:: else -> ret_et = 1;
+	fi
+
+	do
+	:: true ->
+		if
+		:: ret_et == stable[task].comp -> break
+		:: else -> ret_et++
+		fi
+	:: break
+	od
+
+	printf("Task %d's execution time is %d\n",task,ret_et);
+}
+
 inline updateTask() {
 	byte task;
 	for (task : 0 .. NUM_TASKS - 1) {
 		if
 		:: (tickCount == 0) -> 
 			change[task].n = 0;
-			change[task].togo = stable[task].comp
+			rand_et(task,change[task].togo);
 		:: else -> skip
 		fi
 		
@@ -31,7 +49,7 @@ inline updateTask() {
 		if
 		:: (NEXTPERIOD(task) == tickCount) -> 
 			change[task].n = change[task].n + 1;
-			change[task].togo = stable[task].comp
+			rand_et(task,change[task].togo);
 		:: else -> skip
 		fi
 		
