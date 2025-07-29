@@ -65,6 +65,8 @@ inline selectTask(ret_task) {
 	fi
 	
 	if
+	:: (ret_task == NOTASK && running_task == NOTASK) -> 
+		ret_task = NOTASK;
 	:: (ret_task == NOTASK && running_task != NOTASK) -> 
 		ret_task = running_task;
 	:: (ret_task != NOTASK && running_task == NOTASK) -> 
@@ -97,7 +99,7 @@ inline advanceTick(selected_task) {
 	toSched?done;
 	change[selected_task].togo--;
 	if
-	:: change[selected_task].togo == 0 -> atomic{printf("%d - th Task %d is completed.\n",change[selected_task].n,selected_task);toStateM!yield,selected_task}
+	:: change[selected_task].togo == 0 -> atomic{printf("%d-th Task %d is completed.\n",change[selected_task].n,selected_task);toStateM!yield,selected_task}
 	:: else
 	fi
 	
